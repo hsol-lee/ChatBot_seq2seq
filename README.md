@@ -4,6 +4,19 @@ Based on ChangWookJun's ChatBot_seq2seq code: https://github.com/changwookjun/Ch
 # Architecture 
 ![images](images/chatbot_seq2seq.png)  
 
+# 수정된 내용
+- data.py 
+    - 토크나이징 방식 변경
+    - 
+- main.py
+    - 반복된 데이터 전 처리 과정 삭제
+    - 
+- configs.py 
+    - batchSize -> 200
+    - trainSteps -> 20000
+    - layerSize -> 6
+    - hiddenSize -> 256
+    - embeddingSize -> 256
 
 # Learning Data
 Title|Contents|Other
