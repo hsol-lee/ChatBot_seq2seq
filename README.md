@@ -15,7 +15,7 @@ Title|Contents|Other
 
 # Requirement
 Python 3.6.6   
-tensorflow 1.11   
+tensorflow 1.14   
 konlpy   
 pandas   
 sklearn   
