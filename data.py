@@ -7,7 +7,6 @@ from sklearn.model_selection import train_test_split
 import numpy as np
 from configs import DEFINES
 
-from tqdm import tqdm
 
 PAD = "<PAD>"
 STD = "<SOS>"
