@@ -19,9 +19,9 @@ tensorflow 1.14
 konlpy   
 pandas   
 sklearn
-Rouge
+rouge
 NLTK
-Numpy
+numpy
 
 # Project Structure
     .
