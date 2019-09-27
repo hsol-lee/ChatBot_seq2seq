@@ -7,13 +7,15 @@ Based on ChangWookJun's ChatBot_seq2seq code: https://github.com/changwookjun/Ch
 # 수정된 내용
 - data.py 
     - 토크나이징 방식 변경
-    - 
+    - 불용어 
+    - 패딩 과정 수정
 - main.py
     - 반복된 데이터 전 처리 과정 삭제
-    - 
+    - Bleu score 계산 추가
+    - Rouge score 계산 추가
 - configs.py 
     - batchSize -> 200
-    - trainSteps -> 20000
+    - trainSteps -> 50000
     - layerSize -> 6
     - hiddenSize -> 256
     - embeddingSize -> 256
@@ -53,7 +55,7 @@ numpy
 
 # Config
 tf.app.flags.DEFINE_integer('batchSize', 200, 'batch size') # 배치 크기  
-tf.app.flags.DEFINE_integer('trainSteps', 20000, 'train steps') # 학습 에포크  
+tf.app.flags.DEFINE_integer('trainSteps', 50000, 'train steps') # 학습 에포크  
 tf.app.flags.DEFINE_float('dropoutWidth', 0.5, 'dropout width') # 드롭아웃 크기  
 tf.app.flags.DEFINE_integer('layerSize', 6, 'layer size') # 멀티 레이어 크기 (multi rnn)  
 tf.app.flags.DEFINE_integer('hiddenSize', 256, 'weights size') # 가중치 크기  
@@ -72,7 +74,7 @@ tf.app.flags.DEFINE_boolean('multilayer', True, 'Use Multi RNN Cell') # 멀티 R
 python main.py
 
 # Predict
-python predict.py 남자친구가 너무 잘 생겼어
+python predict.py 안녕
 
 # Reference
 Title|Contents
