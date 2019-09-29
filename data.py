@@ -107,6 +107,17 @@ dictionary 없는 토큰의 경우 unk값으로 대체 ->
 output: 넘파이 문장 인덱스 벡터, 문장 길이 
 """
 
+from konlpy.tag import Okt
+
+def prepro_like_morphlized(data):
+    morph_analyzer = Okt()
+    result_data = list()
+    for seq in data:
+        morphlized_seq = " ".join(morph_analyzer.morphs(seq.replace(' ', '')))
+        result_data.append(morphlized_seq)
+
+    return result_data
+
 
 def enc_processing(value, dictionary):
     
@@ -244,7 +255,6 @@ def dec_target_processing(value, dictionary):
         # 문장 제한 길이보다 길어질 경우 뒤에 토큰을 제거
         # END 토큰을 추가 (DEFINES.max_sequence_length 길이를 맞춰서 추가)
         
-        seq_index = [dictionary[STD]] + seq_index
         # 문장 제한 길이보다 길어질 경우 뒤에 토큰을 자르고 있다.
         if len(seq_index) >= DEFINES.max_sequence_length:
             seq_index = seq_index[:DEFINES.max_sequence_length - 1] + [dictionary[END]]
