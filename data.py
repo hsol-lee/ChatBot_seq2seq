@@ -121,10 +121,10 @@ def enc_processing(value, dictionary):
         # 하나의 seq에 index를 저장할 배열 초기화
         seq_index =[]
         
-        for word in seq.split():
+        for word in seq:
             if dictionary.get(word) is not None:
                 # seq_index에 dictionary 안의 인덱스를 extend 한다
-                seq_index.extend([dictionary[value]])
+                seq_index.extend([dictionary[word]])
             else:
                 # dictionary에 존재 하지 않는 다면 UNK 값을 extend 한다 
                 seq_index.extend([dictionary[UNK]])
@@ -174,16 +174,18 @@ def dec_input_processing(value, dictionary):
         # 하나의 seq에 index를 저장할 배열 초기화
         seq_index =[]
         
-        for word in seq.split():
-            # 디코딩 입력의 처음에는 START가 와야 하므로 STD 값 추가
-            seq_index = None
+        for word in seq:
+            
+            
             if dictionary.get(word) is not None:
                 # seq_index에 dictionary 안의 인덱스를 extend 한다
-                sequence_index.extend([dictionary[word]])
+                seq_index.extend([dictionary[word]])
             else:
                 # dictionary에 존재 하지 않는 다면 seq_index에 UNK 값을 extend 한다 
                 seq_index.extend([dictionary[UNK]])
-                
+
+            # 디코딩 입력의 처음에는 START가 와야 하므로 STD 값 추가
+            seq_index = [dictionary[STD]] + seq_index
         # 문장 제한 길이보다 길어질 경우 뒤에 토큰을 제거
         if len(seq_index) > DEFINES.max_sequence_length:
             seq_index = seq_index[:DEFINES.max_sequence_length]
