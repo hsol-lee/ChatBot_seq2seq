@@ -30,10 +30,9 @@ def rouge_compute(ground_truth_utter, answer_sample):
 def main(self):
     data_out_path = os.path.join(os.getcwd(), DATA_OUT_PATH)
     os.makedirs(data_out_path, exist_ok=True)
-    # 데이터를 통한 사전 구성 한다.
-    char2idx, idx2char, vocabulary_length = data.load_voc()
+    
     # 훈련 데이터와 테스트 데이터를 가져온다.
-    train_q, train_a, test_q, test_a = load_data()
+    train_q, train_a, test_q, test_a = data.load_data()
 
     # 데이터 토큰화	
     token_train_q = data.tokenizing_data(train_q)
@@ -41,6 +40,9 @@ def main(self):
 
     token_test_q = data.tokenizing_data(test_q)
     token_test_a = data.tokenizing_data(test_a)
+
+    # 데이터를 통한 사전 구성 한다.
+    char2idx, idx2char, vocabulary_length = data.load_voc(token_train_q, token_train_a)
 	
     # 훈련셋 인코딩 만드는 부분
     train_input_enc = data.enc_processing(token_train_q, char2idx)
