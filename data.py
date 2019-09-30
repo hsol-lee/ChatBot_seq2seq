@@ -109,12 +109,12 @@ output: 넘파이 문장 인덱스 벡터, 문장 길이
 
 from konlpy.tag import Okt
 
-def prepro_like_morphlized(data):
-    morph_analyzer = Okt()
+def prepro_rewrite_konlpy(data):
+    konlpy_analyzer = Okt()
     result_data = list()
     for seq in data:
-        morphlized_seq = " ".join(morph_analyzer.morphs(seq.replace(' ', '')))
-        result_data.append(morphlized_seq)
+        konlpy_seq = " ".join(konlpy_analyzer.morphs(seq.replace(' ', '')))
+        result_data.append(konlpy_seq)
 
     return result_data
 
