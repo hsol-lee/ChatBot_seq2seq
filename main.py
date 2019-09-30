@@ -35,11 +35,11 @@ def main(self):
     train_q, train_a, test_q, test_a = data.load_data()
 
     # 데이터 토큰화	
-    token_train_q = data.tokenizing_data(data.prepro_like_morphlized(train_q))
-    token_train_a = data.tokenizing_data(data.prepro_like_morphlized(train_a))
+    token_train_q = data.tokenizing_data(train_q)
+    token_train_a = data.tokenizing_data(train_a)
 
-    token_test_q = data.tokenizing_data(data.prepro_like_morphlized(test_q))
-    token_test_a = data.tokenizing_data(data.prepro_like_morphlized(test_a))
+    token_test_q = data.tokenizing_data(test_q)
+    token_test_a = data.tokenizing_data(test_a)
 
     # 데이터를 통한 사전 구성 한다.
     char2idx, idx2char, vocabulary_length = data.load_voc(token_train_q, token_train_a)
@@ -93,7 +93,7 @@ def main(self):
 
     # 테스트용 데이터 만드는 부분이다.
     # 인코딩 부분 만든다. 테스트용으로 ["가끔 궁금해"] 값을 넣어 형성된 대답과 비교를 한다.
-    predic_input_enc = data.enc_processing(data.tokenizing_data(data.prepro_like_morphlized(["가끔 궁금해"])), char2idx)
+    predic_input_enc = data.enc_processing(data.tokenizing_data(["가끔 궁금해"]), char2idx)
     # 학습 과정이 아니므로 디코딩 입력은
     # 존재하지 않는다.(구조를 맞추기 위해 넣는다.)
     predic_input_dec = data.dec_input_processing([""], char2idx)
