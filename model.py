@@ -1,9 +1,9 @@
+#-*- coding: utf-8 -*-
 import tensorflow as tf
 import sys
 
 from configs import DEFINES
 
-# BahdanauAttention 모델: https://www.tensorflow.org/tutorials/text/nmt_with_attention
 class BahdanauAttention(tf.keras.Model):
   def __init__(self, units):
     super(BahdanauAttention, self).__init__()
@@ -125,8 +125,8 @@ def model(features, labels, mode, params):
             logits_temp.append(output_logits)
 
         # predict_temp, logits_temp 매트릭스 조절
-        predict = tf.transpose(tf.stack(predict_tokens, axis=0), [1, 0])
-        logits = tf.transpose(tf.stack(temp_logits, axis=0), [1, 0, 2])
+        predict = tf.transpose(tf.stack(predict_temp, axis=0), [1, 0])
+        logits = tf.transpose(tf.stack(logits_temp, axis=0), [1, 0, 2])
 
         
 
