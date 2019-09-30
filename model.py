@@ -1,12 +1,40 @@
-#-*- coding: utf-8 -*-
 import tensorflow as tf
 import sys
 
 from configs import DEFINES
 
+# BahdanauAttention 모델: https://www.tensorflow.org/tutorials/text/nmt_with_attention
+class BahdanauAttention(tf.keras.Model):
+  def __init__(self, units):
+    super(BahdanauAttention, self).__init__()
+    self.W1 = tf.keras.layers.Dense(units)
+    self.W2 = tf.keras.layers.Dense(units)
+    self.V = tf.keras.layers.Dense(1)
+
+  def call(self, query, values):
+    # hidden shape == (batch_size, hidden size)
+    # hidden_with_time_axis shape == (batch_size, 1, hidden size)
+    # we are doing this to perform addition to calculate the score
+    hidden_with_time_axis = tf.expand_dims(query, 1)
+
+    # score shape == (batch_size, max_length, 1)
+    # we get 1 at the last axis because we are applying score to self.V
+    # the shape of the tensor before applying self.V is (batch_size, max_length, units)
+    score = self.V(tf.nn.tanh(
+        self.W1(values) + self.W2(hidden_with_time_axis)))
+
+    # attention_weights shape == (batch_size, max_length, 1)
+    attention_weights = tf.nn.softmax(score, axis=1)
+
+    # context_vector shape after sum == (batch_size, hidden_size)
+    context_vector = attention_weights * values
+    context_vector = tf.reduce_sum(context_vector, axis=1)
+
+    return context_vector, attention_weights
+
 # 엘에스티엠(LSTM) 단층 네트워크 구성하는 부분
 def make_lstm_cell(mode, hiddenSize, index):
-    cell = tf.nn.rnn_cell.BasicLSTMCell(hiddenSize, name = "lstm"+str(index))
+    cell = tf.nn.rnn_cell.BasicLSTMCell(hiddenSize, name = "lstm"+str(index), state_is_tuple=False)
     if mode == tf.estimator.ModeKeys.TRAIN:
         cell = tf.contrib.rnn.DropoutWrapper(cell, output_keep_prob=DEFINES.dropout_width)
     return cell
@@ -38,15 +66,13 @@ def model(features, labels, mode, params):
     # 임베딩된 인코딩 배치를 만든다.
     embedding_encoder = tf.nn.embedding_lookup(params = embedding, ids = features['input'])
 
-    # 임베딩된 디코딩 배치를 만든다.
-    embedding_decoder = tf.nn.embedding_lookup(params = embedding, ids = features['output'])
-
+    
     with tf.variable_scope('encoder_scope', reuse=tf.AUTO_REUSE):
         # 값이 True이면 멀티레이어로 모델을 구성하고 False이면 
         # 단일레이어로 모델을 구성 한다.
         if params['multilayer'] == True:
             encoder_cell_list = [make_lstm_cell(mode, params['hidden_size'], i) for i in range(params['layer_size'])]
-            rnn_cell = tf.contrib.rnn.MultiRNNCell(encoder_cell_list)
+            rnn_cell = tf.contrib.rnn.MultiRNNCell(encoder_cell_list, state_is_tuple=False)
         else:
             rnn_cell = make_lstm_cell(mode, params['hidden_size'], "")
         
@@ -57,32 +83,61 @@ def model(features, labels, mode, params):
                                                                 dtype=tf.float32) # 타입
 
     with tf.variable_scope('decoder_scope', reuse=tf.AUTO_REUSE):
+        
         if params['multilayer'] == True:
             decoder_cell_list = [make_lstm_cell(mode, params['hidden_size'], i) for i in range(params['layer_size'])]
-            rnn_cell = tf.contrib.rnn.MultiRNNCell(decoder_cell_list)
+            rnn_cell = tf.contrib.rnn.MultiRNNCell(decoder_cell_list, state_is_tuple=False)
         else:
             rnn_cell = make_lstm_cell(mode, params['hidden_size'], "")
 
-        decoder_initial_state = encoder_states
-        decoder_outputs, decoder_states = tf.nn.dynamic_rnn(cell=rnn_cell, # RNN 셀
-                       inputs=embedding_decoder, # 입력 값
-                       initial_state=decoder_initial_state, # 인코딩의 마지막 값으로 초기화
-                       dtype=tf.float32) # 타입
+        #예측 결과 용 임시 파라미터
+        predict_temp = list()
+        logits_temp = list()
+        output_token = tf.ones(shape=(tf.shape(encoder_outputs)[0],), dtype=tf.int32) * 1
+        
+        for i in range(DEFINES.max_sequence_length):
+            # 학습시 디코딩용 임베딩
+            if TRAIN:
+                if i > 0:
+                    input_embedding_decoder = tf.nn.embedding_lookup(embedding, labels[:, i-1])  
+                else:
+                    input_embedding_decoder = tf.nn.embedding_lookup(embedding, output_token) 
+            else: 
+                input_embedding_decoder = tf.nn.embedding_lookup(embedding, output_token)
 
+            # attention class 적용
+            attentions = BahdanauAttention(params['hidden_size'])
+            context_vector, attention_weights = attentions(encoder_states, encoder_outputs)
+            input_embedding_decoder = tf.concat([context_vector,input_embedding_decoder], axis=-1)
+        
+            input_embedding_decoder = tf.keras.layers.Dropout(0.5)(input_embedding_decoder)
+            decoder_outputs, decoder_state = rnn_cell(input_embedding_decoder, encoder_states)
+            decoder_outputs = tf.keras.layers.Dropout(0.5)(decoder_outputs)
+            # feedforward를 거쳐 output에 대한 logit값을 구한다.
+            output_logits = tf.layers.dense(decoder_outputs, params['vocabulary_length'], activation=None)
 
-    # logits는 마지막 히든레이어를 통과한 결과값이다.
-    logits = tf.layers.dense(decoder_outputs, params['vocabulary_length'], activation=None)
+            # softmax를 통해 단어에 대한 예측 probability를 구현
+            output_probs = tf.nn.softmax(output_logits)
+            output_token = tf.argmax(output_probs, axis=-1)
 
-	# argmax를 통해서 최대 값을 가져 온다.
-    predict = tf.argmax(logits, 2)
+            # 한 스텝에 나온 output_token, output_logits 확장
+            predict_temp.append(output_token)
+            logits_temp.append(output_logits)
+
+        # predict_temp, logits_temp 매트릭스 조절
+        predict = tf.transpose(tf.stack(predict_tokens, axis=0), [1, 0])
+        logits = tf.transpose(tf.stack(temp_logits, axis=0), [1, 0, 2])
+
+        
 
     if PREDICT:
         predictions = { # 예측 값들이 여기에 딕셔너리 형태로 담긴다.
             'indexs': predict, # 시퀀스 마다 예측한 값
+            'logits': logits, # 결과값
         }
         return tf.estimator.EstimatorSpec(mode, predictions=predictions)
     
-    #  
+
     # logits과 같은 차원을 만들어 마지막 결과 값과 정답 값을 비교하여 에러를 구한다.
     labels_ = tf.one_hot(labels, params['vocabulary_length'])
     loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(logits=logits, labels=labels_))
