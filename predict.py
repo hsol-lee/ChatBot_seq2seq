@@ -13,7 +13,16 @@ if __name__ == '__main__':
         raise Exception("Don't call us. We'll call you")
   
     
-    char2idx,  idx2char, vocabulary_length = data.load_voc()
+    train_q, train_a, test_q, test_a = data.load_data()
+
+    token_train_q = data.tokenizing_data(train_q)
+    token_train_a = data.tokenizing_data(train_a)
+
+    token_test_q = data.tokenizing_data(test_q)
+    token_test_a = data.tokenizing_data(test_a)
+
+    char2idx, idx2char, vocabulary_length = data.load_voc(token_train_q, token_train_a)
+
     input = ""
     for i in sys.argv[1:]:
         input += i 
@@ -40,7 +49,7 @@ if __name__ == '__main__':
             })
 
     predictions = classifier.predict(
-        input_fn=lambda:data.eval_input_fn(predic_input_enc, predic_input_dec, predic_target_dec, DEFINES.batch_size))
+        input_fn=lambda:data.eval_input_fn(predic_input_enc, predic_input_dec, predic_target_dec, 1))
     
     answer, finished = data.pred_next_string(predictions, idx2char)
 
